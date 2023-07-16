@@ -161,6 +161,7 @@ impl PerformCrud for Register {
 
     let mut login_response = LoginResponse {
       jwt: None,
+      refresh_token: None,
       registration_created: false,
       verify_email_sent: false,
     };
@@ -174,6 +175,7 @@ impl PerformCrud for Register {
           inserted_local_user.id.0,
           &context.secret().jwt_secret,
           &context.settings().hostname,
+          false
         )?
         .into(),
       );

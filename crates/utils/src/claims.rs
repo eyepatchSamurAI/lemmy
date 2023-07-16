@@ -2,8 +2,12 @@ use crate::error::LemmyError;
 use chrono::Utc;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, TokenData, Validation};
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 type Jwt = String;
+
+const ACCESS_TOKEN_EXPIRE: i64 = 60 * 100 * 10; // 60 * 100 * 15;  // SAMURAI_TODO CHANGE TO ACTUAL MINS
+const REFRESH_TOKEN_EXPIRE: i64 = 60 * 100 * 20;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -12,6 +16,9 @@ pub struct Claims {
   pub iss: String,
   /// Time when this token was issued as UNIX-timestamp in seconds
   pub iat: i64,
+  pub jti: Uuid,
+  pub exp: i64,
+  pub is_refresh_token: bool,
 }
 
 impl Claims {
@@ -23,11 +30,16 @@ impl Claims {
     Ok(decode::<Claims>(jwt, &key, &validation)?)
   }
 
-  pub fn jwt(local_user_id: i32, jwt_secret: &str, hostname: &str) -> Result<Jwt, LemmyError> {
+  pub fn jwt(local_user_id: i32, jwt_secret: &str, hostname: &str, is_refresh_token: bool) -> Result<Jwt, LemmyError> {
+    let now = Utc::now().timestamp();
+    let expiration = if is_refresh_token {REFRESH_TOKEN_EXPIRE} else {ACCESS_TOKEN_EXPIRE};
     let my_claims = Claims {
       sub: local_user_id,
       iss: hostname.to_string(),
-      iat: Utc::now().timestamp(),
+      iat: now,
+      exp: now + expiration,
+      jti: Uuid::new_v4(),
+      is_refresh_token,
     };
 
     let key = EncodingKey::from_secret(jwt_secret.as_ref());

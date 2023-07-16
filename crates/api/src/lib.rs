@@ -8,6 +8,7 @@ use lemmy_utils::{
   utils::slurs::check_slurs,
 };
 use std::io::Cursor;
+use std::collections::HashMap;
 
 mod comment;
 mod comment_report;
@@ -24,6 +25,10 @@ pub trait Perform {
   type Response: serde::ser::Serialize + Send + Clone + Sync;
 
   async fn perform(&self, context: &Data<LemmyContext>) -> Result<Self::Response, LemmyError>;
+}
+
+pub trait WithHeaders {
+  fn headers(&self) -> HashMap<String, String>;
 }
 
 /// Converts the captcha to a base64 encoded wav audio file
@@ -121,6 +126,7 @@ mod tests {
       inserted_local_user.id.0,
       &secret.jwt_secret,
       &settings.hostname,
+      false
     )
     .unwrap();
     let claims = Claims::decode(&jwt, &secret.jwt_secret).unwrap().claims;

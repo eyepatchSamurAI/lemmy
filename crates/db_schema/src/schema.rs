@@ -842,6 +842,17 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    person_refresh_token (id) {
+        id -> Int4,
+        person_id -> Int4,
+        token_encrypted -> Text,
+        expires_at -> Timestamp,
+        issued_at -> Timestamp,
+        client_id -> Int4,
+    }
+}
+
 diesel::joinable!(admin_purge_comment -> person (admin_person_id));
 diesel::joinable!(admin_purge_comment -> post (post_id));
 diesel::joinable!(admin_purge_community -> person (admin_person_id));
@@ -924,6 +935,7 @@ diesel::joinable!(site_aggregates -> site (site_id));
 diesel::joinable!(site_language -> language (language_id));
 diesel::joinable!(site_language -> site (site_id));
 diesel::joinable!(tagline -> local_site (local_site_id));
+diesel::joinable!(person_refresh_token -> person (person_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     admin_purge_comment,
@@ -990,4 +1002,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     site_aggregates,
     site_language,
     tagline,
+    person_refresh_token,
 );

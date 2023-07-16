@@ -1,4 +1,4 @@
-use crate::Perform;
+use crate::{Perform, WithHeaders};
 use actix_web::web::Data;
 use bcrypt::verify;
 use lemmy_api_common::{
@@ -12,6 +12,15 @@ use lemmy_utils::{
   error::{LemmyError, LemmyErrorExt, LemmyErrorType},
   utils::validation::check_totp_2fa_valid,
 };
+use actix_web::HttpResponse;
+use std::collections::HashMap;
+use actix_web::http;
+
+// impl WithHeaders for LoginResponse {
+//   fn headers(&self) -> HashMap<String, String> {
+//       self.headers.clone()
+//   }
+// }
 
 #[async_trait::async_trait(?Send)]
 impl Perform for Login {
@@ -20,6 +29,7 @@ impl Perform for Login {
   #[tracing::instrument(skip(context))]
   async fn perform(&self, context: &Data<LemmyContext>) -> Result<LoginResponse, LemmyError> {
     let data: &Login = self;
+    http::header::SET_COOKIE;
 
     let site_view = SiteView::read_local(&mut context.pool()).await?;
 
@@ -65,16 +75,41 @@ impl Perform for Login {
       &local_user_view.person.name,
     )?;
 
+    let jwt = Claims::jwt(
+      local_user_view.local_user.id.0,
+      &context.secret().jwt_secret,
+      &context.settings().hostname,
+      false
+    )?;
+
+      // SAMURAI_TODO STORE TO DB
+  let refresh_token = Claims::jwt(
+    local_user_view.local_user.id.0,
+    &context.secret().jwt_secret,
+    &context.settings().hostname,
+    true
+  )?;
+
+  let headers = HashMap::<String, String>::new();
+  // headers.insert(k, v)
+
+  let yy = LoginResponse {
+    jwt: Some(
+      jwt.into()
+    ),
+    refresh_token: Some(refresh_token.into()),
+    verify_email_sent: false,
+    registration_created: false,
+  };
+  yy.
+
+
     // Return the jwt
     Ok(LoginResponse {
       jwt: Some(
-        Claims::jwt(
-          local_user_view.local_user.id.0,
-          &context.secret().jwt_secret,
-          &context.settings().hostname,
-        )?
-        .into(),
+        jwt.into()
       ),
+      refresh_token: Some(refresh_token.into()),
       verify_email_sent: false,
       registration_created: false,
     })

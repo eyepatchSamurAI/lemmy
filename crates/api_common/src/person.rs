@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::sensitive::Sensitive;
 use lemmy_db_schema::{
   newtypes::{CommentReplyId, CommunityId, LanguageId, PersonId, PersonMentionId},
@@ -156,11 +158,14 @@ pub struct ChangePassword {
 pub struct LoginResponse {
   /// This is None in response to `Register` if email verification is enabled, or the server requires registration applications.
   pub jwt: Option<Sensitive<String>>,
+  pub refresh_token: Option<Sensitive<String>>,
   /// If registration applications are required, this will return true for a signup response.
   pub registration_created: bool,
   /// If email verifications are required, this will return true for a signup response.
   pub verify_email_sent: bool,
+  pub headers: HashMap<String, String>
 }
+
 
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]

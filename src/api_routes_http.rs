@@ -1,5 +1,6 @@
 use actix_web::{guard, web, Error, HttpResponse, Result};
-use lemmy_api::Perform;
+use actix_web::http::header;
+use lemmy_api::{Perform, WithHeaders};
 use lemmy_api_common::{
   comment::{
     CreateComment,
@@ -421,7 +422,36 @@ where
     + Send
     + 'static,
 {
-  perform::<Data>(data.0, context, apub_data).await
+  // perform::<Data>(data.0, context, apub_data).await
+
+  // match result {
+  //   Ok(login_response) => {
+  //     let mut response = HttpResponse::Ok().json(login_response);
+  //     if let Some(refresh_token) = login_response {
+  //       let cookie_value = format!("refresh_token={}; Path=/; HttpOnly", refresh_token);
+  //       response.headers_mut().insert(header::SET_COOKIE, header::HeaderValue::from_str(&cookie_value)?);
+  //     }
+  //     Ok(response)
+  //   },
+  //   Err(e) => Err(e)
+  // }
+
+  let result = perform::<Data>(data.0, context, apub_data).await?;
+
+  match result {
+    Ok(response) => {
+      let mut http_response = HttpResponse::Ok();
+
+      if let Some(with_headers) = response.downcast_ref::<dyn WithHeaders>() {
+        for (header_name, header_value) in with_headers.headers() {
+          http_response.headers_mut().insert(header_name.clone(), header_value.clone());
+        }
+      }
+
+      Ok(http_response.json(response))
+    },
+    Err(e) => Err(e)
+  }
 }
 
 async fn perform_crud<'a, Data>(

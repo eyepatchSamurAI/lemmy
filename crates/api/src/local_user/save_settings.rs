@@ -153,16 +153,24 @@ impl Perform for SaveUserSettings {
       }
     };
 
+    let jwt = Claims::jwt(
+      updated_local_user.id.0,
+      &context.secret().jwt_secret,
+      &context.settings().hostname,
+      false
+    )?;
+
+  let refresh_token = Claims::jwt(
+    updated_local_user.id.0,
+    &context.secret().jwt_secret,
+    &context.settings().hostname,
+    true
+  )?;
+
     // Return the jwt
     Ok(LoginResponse {
-      jwt: Some(
-        Claims::jwt(
-          updated_local_user.id.0,
-          &context.secret().jwt_secret,
-          &context.settings().hostname,
-        )?
-        .into(),
-      ),
+      jwt: Some(jwt.into()),
+      refresh_token: Some(refresh_token.into()),
       verify_email_sent: false,
       registration_created: false,
     })

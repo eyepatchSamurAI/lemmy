@@ -55,6 +55,7 @@ impl Perform for PasswordChangeAfterReset {
           updated_local_user.id.0,
           &context.secret().jwt_secret,
           &context.settings().hostname,
+          false
         )?
         .into(),
       )
@@ -62,6 +63,7 @@ impl Perform for PasswordChangeAfterReset {
 
     Ok(LoginResponse {
       jwt,
+      refresh_token: None,
       verify_email_sent: false,
       registration_created: false,
     })
